@@ -39,6 +39,34 @@ end
 
 require('plugin/styles')
 
+local function parseNowPlaying(array)
+	local t = {}
+	for _,s in pairs(array) do
+		for k, v in string.gmatch(s, "(.+): (.+)") do
+			t[k] = v
+		end
+	end
+	return t
+end
+
+local function parseQueue(array,key)
+	local t = {}
+	local i = 1
+	for _,s in pairs(array) do
+		for v in string.gmatch(s,key .. ": (.+)") do
+			t[i] = v
+			i = i + 1
+		end
+	end
+	return t
+end
+
+local function dispTbl(tbl)
+	for key, val in pairs(tbl) do
+		print(key ,':', val)
+	end
+end
+
 add({ source = 'mori-oh/nvimpc.lua' })
 now(function()
 	local mpc = require('nvimpc')
@@ -50,4 +78,15 @@ now(function()
 		mpc.command(opts.args)
 		print(table.concat(mpc.result, '\n'))
 	end, { nargs = '?' })
+
+	vim.api.nvim_create_user_command('MpcNowPlaying', function()
+		mpc.command('currentsong')
+		local tbl = parseNowPlaying(mpc.result)
+		print(tbl.Title,'/',tbl.Artist , '-', tbl.Album)
+	end, { })
+	vim.api.nvim_create_user_command('MpcQueue', function()
+		mpc.command('playlistinfo')
+		local tbl = parseQueue(mpc.result,'Title')
+		dispTbl(tbl)
+	end, { })
 end)
